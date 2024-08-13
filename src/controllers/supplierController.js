@@ -1,23 +1,15 @@
 const createError = require('http-errors');
 
 const Supplier = require('../models/Supplier');
-const { checkDataExists, getDataExists } = require('../helpers/getDataExists');
+const { supplierSchema } = require('../helpers/checkDataInput');
+const { checkDataExists, getDataExists } = require('../helpers/dataExists');
+const { checkDataUnique } = require('../helpers/checkDataUnique');
 
-const checkNameUnique = async (id, name) => {
-    const query = { is_deleted: { $ne: true } };
+const validateInput = (data) => {
+    const { error } = supplierSchema.validate(data);
 
-    if (id && id.length) {
-        Object.assign(query, { _id: { $ne: id } });
-    }
-
-    if (name && name.length) {
-        Object.assign(query, { name });
-    }
-
-    const namelExists = await Supplier.findOne(query).lean();
-
-    if (namelExists) {
-        throw new createError.BadRequest('Nhà cung cấp đã tồn tại!');
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
     }
 
     return true;
@@ -27,14 +19,16 @@ const create = async (req, res, next) => {
     try {
         const { name, ticket_price } = req.body;
 
+        validateInput({ name, ticket_price });
+
         const file = req.file;
 
-        await checkNameUnique(name);
+        await checkDataUnique({ name }, 'Supplier');
 
         const query = {
             name,
             ticket_price,
-            image_ticket_price: `img/uploads/ticket_price/${file.name}`,
+            ticket_price_image: `img/uploads/ticket_price/${file.name}`,
         };
 
         const newSupplier = await Supplier.create(query);
@@ -70,16 +64,18 @@ const update = async (req, res, next) => {
     try {
         const { id, name, ticket_price } = req.body;
 
+        validateInput({ name, ticket_price });
+
         const file = req.file;
 
         await checkDataExists(id, 'Supplier');
 
-        await checkNameUnique(id, name);
+        await checkDataUnique({ id, name }, 'Supplier');
 
         const query = {
             name,
             ticket_price,
-            image_ticket_price: `img/uploads/ticket_price/${file.name}`,
+            ticket_price_image: `img/uploads/ticket_price/${file.name}`,
         };
 
         const supplierUpdate = await Supplier.findByIdAndUpdate(id, query, {

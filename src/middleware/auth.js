@@ -4,7 +4,8 @@ const { verifyAccessToken } = require('../helpers/JWT');
 
 const setUserInRequest = async (req, res, next) => {
     try {
-        const token = req.cookies?.token;
+        const authHeader = req.headers.authorization;
+        const token = authHeader && authHeader.split(' ')[1];
         if (!token) {
             req.user = null;
             return next();
@@ -22,7 +23,8 @@ const setUserInRequest = async (req, res, next) => {
 const requireRole = (roles = ['user']) => {
     return async (req, res, next) => {
         try {
-            const token = req.cookies?.token;
+            const authHeader = req.headers.authorization;
+            const token = authHeader && authHeader.split(' ')[1];
             if (!token) {
                 return res.status(401).send('Không có quyền truy cập');
             }

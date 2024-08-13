@@ -2,7 +2,18 @@ const createError = require('http-errors');
 
 const Cinema = require('../models/Cinema');
 const MovieShowtime = require('../models/MovieShowtime');
-const { checkDataExists, getDataExists } = require('../helpers/getDataExists');
+const { movieShowtimeSchema } = require('../helpers/checkDataInput');
+const { checkDataExists, getDataExists } = require('../helpers/dataExists');
+
+const validateInput = (data) => {
+    const { error } = movieShowtimeSchema.validate(data);
+
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
+    }
+
+    return true;
+};
 
 const getTicketPrice = async (id) => {
     const cinemaExists = await Cinema.findOne({
@@ -26,6 +37,8 @@ const getTicketPrice = async (id) => {
 const create = async (res, req, next) => {
     try {
         const { id_movie, id_cinema, date, start_time, seats } = req.body;
+
+        validateInput({ date, start_time, seats });
 
         await checkDataExists(id_movie, 'Movie');
         await checkDataExists(id_cinema, 'Cinema');
@@ -109,6 +122,8 @@ const getByID = async (req, res, next) => {
 const update = async (req, res, next) => {
     try {
         const { id, id_movie, id_cinema, date, time, seats } = req.body;
+
+        validateInput({ date, start_time, seats });
 
         await checkDataExists(id, 'MovieShowtime');
         await checkDataExists(id_movie, 'Movie');

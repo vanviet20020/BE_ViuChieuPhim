@@ -1,7 +1,20 @@
 const createError = require('http-errors');
 
 const Cinema = require('../models/Cinema');
-const { checkDataExists } = require('../helpers/getDataExists');
+
+const { cinemaSchema } = require('../helpers/checkDataInput');
+const { checkDataExists } = require('../helpers/dataExists');
+const { checkDataUnique } = require('../helpers/checkDataUnique');
+
+const validateInput = (data) => {
+    const { error } = cinemaSchema.validate(data);
+
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
+    }
+
+    return true;
+};
 
 const handleQuery = (args) => {
     const { name, district, id_supplier } = args;
@@ -24,33 +37,15 @@ const handleQuery = (args) => {
     return query;
 };
 
-const checkNameUnique = async (id, name) => {
-    const query = { is_deleted: { $ne: true } };
-
-    if (id && id.length) {
-        Object.assign(query, { _id: { $ne: id } });
-    }
-
-    if (name && name.length) {
-        Object.assign(query, { name });
-    }
-
-    const nameExists = await Cinema.findOne(query).lean();
-
-    if (nameExists) {
-        throw new createError.BadRequest('Rạp chiếu phim đã tồn tại!');
-    }
-
-    return true;
-};
-
 const create = async (req, res, next) => {
     try {
         const { supplier, name, address, district, hotline, lat, lng } =
             req.body;
 
+        validateInput({ name, address, district });
+
         await checkDataExists(supplier, 'Supplier');
-        await checkNameUnique(name);
+        await checkDataUnique({ name }, 'Cinema');
 
         const location = {
             type: 'Point',
@@ -78,11 +73,9 @@ const search = async (req, res, next) => {
     try {
         const page = parseInt(req.params.page) || 1;
         const limit = parseInt(req.params.limit) || 20;
-        const id_supplier = req.params.id_supplier;
+        const idSupplier = req.params.supplier;
 
-        if (id_supplier && id_supplier.length) {
-            await checkDataExists(id_supplier, 'Supplier');
-        }
+        await checkDataExists(idSupplier, 'Supplier');
 
         const query = handleQuery(req.params);
 
@@ -157,11 +150,13 @@ const update = async (req, res, next) => {
             lng,
         } = req.body;
 
+        validateInput({ name, address, district });
+
         await checkDataExists(id_cinema, 'Cinema');
 
         await checkDataExists(id_supplier, 'Supplier');
 
-        await checkNameUnique(id_cinema, name);
+        await checkDataUnique({ id_cinema, name }, 'Cinema');
 
         const location = {
             type: 'Point',
@@ -190,6 +185,7 @@ const update = async (req, res, next) => {
 const remove = async (req, res, next) => {
     try {
         const id = req.body.id;
+
         await checkDataExists(id, 'Cinema');
 
         await Cinema.findByIdAndUpdate(

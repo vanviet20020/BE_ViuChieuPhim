@@ -14,8 +14,15 @@ const CinemaSchema = new Schema(
         supplier: {
             type: Schema.Types.ObjectId,
             ref: 'suppliers',
-            require: true,
+            required: true,
+            index: true,
         },
+        movieshowtimes: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'movieshowtimes',
+            },
+        ],
     },
     {
         timestamps: {

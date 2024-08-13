@@ -1,23 +1,15 @@
 const createError = require('http-errors');
 
 const Movie = require('../models/Movie');
-const { checkDataExists, getDataExists } = require('../helpers/getDataExists');
+const { movieSchema } = require('../helpers/checkDataInput');
+const { checkDataExists, getDataExists } = require('../helpers/dataExists');
+const { checkDataUnique } = require('../helpers/checkDataUnique');
 
-const checkNameUnique = async (id, name) => {
-    const query = { is_deleted: { $ne: true } };
+const validateInput = (data) => {
+    const { error } = movieSchema.validate(data);
 
-    if (id && id.length) {
-        Object.assign(query, { _id: { $ne: id } });
-    }
-
-    if (name && name.length) {
-        Object.assign(query, { name });
-    }
-
-    const namelExists = await Movie.findOne(query).lean();
-
-    if (namelExists) {
-        throw new createError.BadRequest('Bộ phim đã tồn tại!');
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
     }
 
     return true;
@@ -39,7 +31,9 @@ const create = async (req, res, next) => {
 
         const file = req.file;
 
-        await checkNameUnique(name);
+        validateInput(name, trailer_link, runtime);
+
+        await checkDataUnique({ name }, 'Moive');
 
         const query = {
             name,
@@ -124,9 +118,11 @@ const update = async (req, res, next) => {
 
         const file = req.file;
 
+        validateInput(name, trailer_link, runtime);
+
         await checkDataExists(id, 'Movie');
 
-        await checkNameUnique(id, name);
+        await checkDataUnique({ id, name }, 'Movie');
 
         const query = {
             name,

@@ -7,18 +7,31 @@ const {
     signRefreshToken,
     verifyRefreshToken,
 } = require('../helpers/JWT');
-const { checkDataExists, getDataExists } = require('../helpers/getDataExists');
+
+const { userSchema, extendedUserSchema } = require('../helpers/checkDataInput');
+const { checkDataExists } = require('../helpers/dataExists');
+const { checkDataUnique } = require('../helpers/checkDataUnique');
 
 const salt = bcrypt.genSaltSync(10);
 
-const validateInput = (email, password) => {
-    if (!email || !email.length) {
-        throw new createError.BadRequest('Vui lòng nhập email!');
+const validateInput = (data) => {
+    const { error } = extendedUserSchema.validate(data);
+
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
     }
 
-    if (!password || !password.length) {
-        throw new createError.BadRequest('Vui lòng nhập mật khẩu');
+    return true;
+};
+
+const validateInputSignIn = (data) => {
+    const { error } = userSchema.validate(data);
+
+    if (error) {
+        throw new createError.BadRequest(error.details[0].message);
     }
+
+    return true;
 };
 
 const checkPassword = async (user, password) => {
@@ -26,23 +39,6 @@ const checkPassword = async (user, password) => {
 
     if (!match) {
         throw new createError.BadRequest('Mật khẩu không chính xác!');
-    }
-};
-
-const checkDataUnique = async (id, email, phone_number) => {
-    const query = {
-        $or: [{ email: email }, { phone_number: phone_number }],
-        is_deleted: { $ne: true },
-    };
-    if (id) {
-        Object.assign({ _id: { $ne: id } }, query);
-    }
-
-    const user = await User.findOne(query).lean();
-    if (user) {
-        throw new createError.BadRequest(
-            'Email hoặc số điện thoại đã được sử dụng. Hãy sử thử thông tin khác!',
-        );
     }
 };
 
@@ -68,13 +64,13 @@ const signUp = async (req, res, next) => {
     try {
         const { fullname, email, password, phone_number } = req.body;
 
-        validateInput(email, password);
+        validateInput({ email, password, fullname, phone_number });
 
         if (!phone_number || phone_number.length !== 10) {
             throw new createError.BadRequest('Số điện thoại phải là 10 số');
         }
 
-        await checkDataUnique(email, phone_number);
+        await checkDataUnique({ email, phone_number }, 'User');
 
         const hashPassword = bcrypt.hashSync(password, salt);
 
@@ -97,15 +93,15 @@ const signIn = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        validateInput(email, password);
+        validateInputSignIn({ email, password });
 
         const user = await User.findOne({
             email,
             is_deleted: { $ne: true },
         }).lean();
 
-        if (!user || !user.length) {
-            throw new Error('Email không chính xác!');
+        if (!user) {
+            throw new createError.BadRequest('Email không chính xác!');
         }
 
         await checkPassword(user, password);
@@ -143,7 +139,9 @@ const refreshToken = async (req, res, next) => {
     try {
         const refreshToken = req.body.refreshToken;
 
-        if (!refreshToken) return { message: 'Đăng nhập không thành công' };
+        if (!refreshToken) {
+            throw createError.BadRequest('Đăng nhập không thành công');
+        }
 
         const decoded = await verifyRefreshToken(refreshToken);
 
@@ -180,7 +178,8 @@ const signOff = async (req, res, next) => {
     try {
         const { refreshToken } = req.body;
 
-        if (!refreshToken) throw new Error('Không thể đăng xuất!');
+        if (!refreshToken)
+            throw new createError.BadRequest('Không thể đăng xuất!');
 
         const { id } = await verifyRefreshToken(refreshToken);
 
@@ -218,13 +217,15 @@ const update = async (req, res, next) => {
     try {
         const { id, fullname, email, password, phone_number } = req.body;
 
-        validateInput(email, password);
+        validateInput({ email, password, fullname, phone_number });
+
+        await checkDataExists(id, 'User');
 
         if (!phone_number || phone_number.length !== 10) {
             throw new createError.BadRequest('Số điện thoại phải là 10 số');
         }
 
-        await checkDataUnique(id, email, phone_number);
+        await checkDataUnique({ id, email, phone_number }, 'User');
 
         const hashPassword = bcrypt.hashSync(password, salt);
 

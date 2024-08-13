@@ -5,19 +5,21 @@ const { connection } = require('../configs/connectBD');
 
 const MovieShowtimeSchema = new Schema(
     {
-        date: { type: String, required: true },
+        date: { type: Date, required: true },
         start_time: { type: String, required: true },
         seats: { type: Number, required: true },
         ticket_price: { type: Number, required: true },
         movie: {
             type: Schema.Types.ObjectId,
             ref: 'movies',
-            require: true,
+            required: true,
+            index: true,
         },
         cinema: {
             type: Schema.Types.ObjectId,
             ref: 'cinemas',
-            require: true,
+            required: true,
+            index: true,
         },
     },
     {

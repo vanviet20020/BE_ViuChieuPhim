@@ -5,10 +5,15 @@ const { connection } = require('../configs/connectBD');
 
 const UserSchema = new Schema(
     {
-        fullname: { type: String },
+        fullname: { type: String, required: true },
         email: { type: String, unique: true, required: true },
-        password: { type: String, required: true },
-        phone_number: { type: Number, unique: true, length: 10 },
+        password: { type: String, minlength: 4, required: true },
+        phone_number: {
+            type: String,
+            unique: true,
+            minlength: 10,
+            maxlength: 10,
+        },
         coin: { type: Number, default: 0 },
         roles: {
             type: [String],

@@ -7,13 +7,15 @@ const TicketSchema = new Schema(
     {
         user: {
             type: Schema.Types.ObjectId,
-            ref: 'users',
-            require: true,
+            ref: 'user',
+            required: true,
+            index: true,
         },
         movie_showtime: {
             type: Schema.Types.ObjectId,
-            ref: 'movieshowtimes',
-            require: true,
+            ref: 'movieshowtime',
+            required: true,
+            index: true,
         },
     },
     {

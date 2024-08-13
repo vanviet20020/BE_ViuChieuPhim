@@ -11,7 +11,7 @@ const MovieSchema = new Schema(
         description: { type: String },
         director: { type: String },
         cast: { type: String },
-        release_date: { type: String, required: true },
+        release_date: { type: Date, required: true },
         runtime: { type: String, required: true },
         language: { type: String },
         genre: { type: String },
@@ -19,9 +19,15 @@ const MovieSchema = new Schema(
         status: {
             type: String,
             enum: ['Expired', 'Screening', 'Coming soon'],
-            default: ['Screening'],
+            default: 'Screening',
         },
         is_deleted: { type: Boolean, default: false },
+        movieshowtimes: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: 'movieshowtimes',
+            },
+        ],
     },
     {
         timestamps: {
