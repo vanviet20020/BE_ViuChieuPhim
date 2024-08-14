@@ -6,7 +6,7 @@ const managementController = require('../controllers/managementController');
 const router = express.Router();
 
 router.get(
-    '/management',
+    '/',
     requireRole(['admin', 'super_admin']),
     managementController.management,
 );

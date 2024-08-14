@@ -2,6 +2,7 @@ const express = require('express');
 
 const { requireRole } = require('../middleware/auth');
 const uploadFileMiddleware = require('../middleware/upload');
+const { UPLOAD_FOLDER_SUPPLIER } = require('../helpers/constants');
 const supplierController = require('../controllers/supplierController');
 
 const router = express.Router();
@@ -9,18 +10,18 @@ const router = express.Router();
 router.post(
     '/',
     requireRole(['admin', 'super_admin']),
-    uploadFileMiddleware,
+    uploadFileMiddleware(UPLOAD_FOLDER_SUPPLIER),
     supplierController.create,
 );
 router.get('/:id', supplierController.getByID);
 router.patch(
-    '/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
-    uploadFileMiddleware,
+    uploadFileMiddleware(UPLOAD_FOLDER_SUPPLIER),
     supplierController.update,
 );
 router.delete(
-    '/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
     supplierController.remove,
 );

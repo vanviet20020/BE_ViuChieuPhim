@@ -1,9 +1,12 @@
+const path = require('path');
 const createError = require('http-errors');
 
 const Supplier = require('../models/Supplier');
 const { supplierSchema } = require('../helpers/checkDataInput');
 const { checkDataExists, getDataExists } = require('../helpers/dataExists');
 const { checkDataUnique } = require('../helpers/checkDataUnique');
+const { UPLOAD_FOLDER_SUPPLIER } = require('../helpers/constants');
+const { deleteFile } = require('../helpers/deleteFile');
 
 const validateInput = (data) => {
     const { error } = supplierSchema.validate(data);
@@ -28,13 +31,26 @@ const create = async (req, res, next) => {
         const query = {
             name,
             ticket_price,
-            ticket_price_image: `img/uploads/ticket_price/${file.name}`,
+            ticket_price_image: `img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
         };
 
         const newSupplier = await Supplier.create(query);
 
         return res.status(201).json(newSupplier);
     } catch (error) {
+        if (req.file) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                'img',
+                UPLOAD_FOLDER_SUPPLIER,
+                req.file.filename,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(400).json(error);
     }
 };
@@ -68,21 +84,46 @@ const update = async (req, res, next) => {
 
         const file = req.file;
 
-        await checkDataExists(id, 'Supplier');
+        const oldSupplier = await getDataExists(id, 'Supplier');
 
         await checkDataUnique({ id, name }, 'Supplier');
 
         const query = {
             name,
             ticket_price,
-            ticket_price_image: `img/uploads/ticket_price/${file.name}`,
+            ticket_price_image: `img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
         };
 
         const supplierUpdate = await Supplier.findByIdAndUpdate(id, query, {
             new: true,
         }).lean();
+
+        if (oldSupplier) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                oldSupplier.ticket_price_image,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(200).json(supplierUpdate);
     } catch (error) {
+        if (req.file) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                'img',
+                UPLOAD_FOLDER_SUPPLIER,
+                req.file.filename,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(500).json(error);
     }
 };

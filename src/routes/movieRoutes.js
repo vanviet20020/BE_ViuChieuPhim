@@ -2,31 +2,32 @@ const express = require('express');
 
 const { requireRole } = require('../middleware/auth');
 const uploadFileMiddleware = require('../middleware/upload');
+const { UPLOAD_FOLDER_MOVIE } = require('../helpers/constants');
 const movieController = require('../controllers/movieController');
 
 const router = express.Router();
 
 router.post(
-    '/create',
+    '/',
     requireRole(['admin', 'super_admin']),
-    uploadFileMiddleware,
+    uploadFileMiddleware(UPLOAD_FOLDER_MOVIE),
     movieController.create,
 );
-router.get('/search', movieController.search);
+router.get('/', movieController.search);
 router.get('/:id', movieController.getByID);
 router.patch(
-    '/update/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
-    uploadFileMiddleware,
+    uploadFileMiddleware(UPLOAD_FOLDER_MOVIE),
     movieController.update,
 );
-router.put(
-    '/update/:id/status',
+router.patch(
+    '/status',
     requireRole(['admin', 'super_admin']),
     movieController.updateStatus,
 );
 router.delete(
-    '/delete/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
     movieController.remove,
 );

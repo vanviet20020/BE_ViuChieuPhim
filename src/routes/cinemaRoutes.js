@@ -14,12 +14,12 @@ router.get('/', cinemaController.search);
 router.get('/:id', cinemaController.getByID);
 router.get('/geojson', cinemaController.geojson);
 router.patch(
-    '/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
     cinemaController.update,
 );
 router.delete(
-    '/:id',
+    '/',
     requireRole(['admin', 'super_admin']),
     cinemaController.remove,
 );

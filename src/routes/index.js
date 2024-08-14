@@ -13,8 +13,8 @@ const route = (app) => {
     app.use('/movie', movieRoutes);
     app.use('/cinema', cinemaRoutes);
     app.use('/movie-showtime', movieShowtimeRoutes);
-    app.use('/movie-showtime', managementRoutes);
     app.use('/ticket', ticketRoutes);
+    app.use('/management', managementRoutes);
     app.use('/', homeRoutes);
 };
 

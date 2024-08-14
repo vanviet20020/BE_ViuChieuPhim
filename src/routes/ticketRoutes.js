@@ -6,7 +6,7 @@ const ticketController = require('../controllers/tickerController');
 const router = express.Router();
 
 router.post(
-    '/book',
+    '/',
     requireRole(['user', 'admin', 'super_admin']),
     ticketController.bookTicket,
 );

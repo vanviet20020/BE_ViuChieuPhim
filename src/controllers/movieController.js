@@ -1,9 +1,12 @@
+const path = require('path');
 const createError = require('http-errors');
 
 const Movie = require('../models/Movie');
 const { movieSchema } = require('../helpers/checkDataInput');
 const { checkDataExists, getDataExists } = require('../helpers/dataExists');
 const { checkDataUnique } = require('../helpers/checkDataUnique');
+const { UPLOAD_FOLDER_MOVIE } = require('../helpers/constants');
+const { deleteFile } = require('../helpers/deleteFile');
 
 const validateInput = (data) => {
     const { error } = movieSchema.validate(data);
@@ -29,15 +32,15 @@ const create = async (req, res, next) => {
             genre,
         } = req.body;
 
-        const file = req.file;
-
         validateInput(name, trailer_link, runtime);
+
+        const file = req.file;
 
         await checkDataUnique({ name }, 'Moive');
 
         const query = {
             name,
-            image: `img/uploads/movie/${file.filename}`,
+            image: `img/${UPLOAD_FOLDER_MOVIE}/${file.filename}`,
             trailer_link,
             description,
             director,
@@ -52,6 +55,19 @@ const create = async (req, res, next) => {
 
         return res.status(201).json(newMovie);
     } catch (error) {
+        if (req.file) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                'img',
+                UPLOAD_FOLDER_MOVIE,
+                req.file.filename,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(400).json(error);
     }
 };
@@ -116,17 +132,17 @@ const update = async (req, res, next) => {
             genre,
         } = req.body;
 
-        const file = req.file;
-
         validateInput(name, trailer_link, runtime);
 
-        await checkDataExists(id, 'Movie');
+        const file = req.file;
+
+        const oldMovie = await getDataExists(id, 'Movie');
 
         await checkDataUnique({ id, name }, 'Movie');
 
         const query = {
             name,
-            image: `img/uploads/${file.filename}`,
+            image: `img/${UPLOAD_FOLDER_MOVIE}${file.filename}`,
             trailer_link,
             description,
             director,
@@ -141,8 +157,32 @@ const update = async (req, res, next) => {
             new: true,
         }).lean();
 
+        if (movieUpdate) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                oldMovie.image,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(200).json(movieUpdate);
     } catch (error) {
+        if (req.file) {
+            const filePath = path.join(
+                __dirname,
+                '..',
+                'public',
+                'img',
+                UPLOAD_FOLDER_MOVIE,
+                req.file.filename,
+            );
+
+            deleteFile(filePath);
+        }
+
         return res.status(500).json(error);
     }
 };

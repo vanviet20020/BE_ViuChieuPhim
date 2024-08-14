@@ -37,6 +37,26 @@ const handleQuery = (args) => {
     return query;
 };
 
+const handleSearch = async (req) => {
+    const page = parseInt(req.params.page) || 1;
+    const limit = parseInt(req.params.limit) || 20;
+    const idSupplier = req.params.supplier;
+
+    await checkDataExists(idSupplier, 'Supplier');
+
+    const query = handleQuery(req.params);
+
+    const cinemas = await Cinema.find(query)
+        .sort({ updated_at: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+
+    const count = await Cinema.countDocuments(query);
+
+    return { cinemas, count, page, limit };
+};
+
 const create = async (req, res, next) => {
     try {
         const { supplier, name, address, district, hotline, lat, lng } =
@@ -71,23 +91,35 @@ const create = async (req, res, next) => {
 
 const search = async (req, res, next) => {
     try {
-        const page = parseInt(req.params.page) || 1;
-        const limit = parseInt(req.params.limit) || 20;
-        const idSupplier = req.params.supplier;
-
-        await checkDataExists(idSupplier, 'Supplier');
-
-        const query = handleQuery(req.params);
-
-        const cinemas = await Cinema.find(query)
-            .sort({ updated_at: -1 })
-            .skip((page - 1) * limit)
-            .limit(limit)
-            .lean();
-
-        const count = await Cinema.countDocuments(query);
+        const { cinemas, count, page, limit } = await handleSearch(req);
 
         return res.status(200).json({ cinemas, count, page, limit });
+    } catch (error) {
+        return res.status(400).json(error);
+    }
+};
+
+const geojson = async (req, res, next) => {
+    try {
+        const { cinemas, count, page, limit } = await handleSearch(req);
+
+        const cinemasFeatures = cinemas.map((i) => {
+            const properties_temp = {
+                id: i._id,
+                name: i.name,
+                district: i.district,
+                address: i.address,
+                hotline: i.hotline,
+            };
+
+            return {
+                type: 'Feature',
+                properties: properties_temp,
+                geometry: i.location,
+            };
+        });
+
+        return res.status(200).json(cinemasFeatures, count, page, limit);
     } catch (error) {
         return res.status(400).json(error);
     }
@@ -107,31 +139,6 @@ const getByID = async (req, res, next) => {
             .lean();
 
         return res.status(200).json(cinema);
-    } catch (error) {
-        return res.status(400).json(error);
-    }
-};
-
-const geojson = async (req, res, next) => {
-    try {
-        const { cinemas, count, page, limit } = await search(req);
-        const cinemasFeatures = cinemas.map((i) => {
-            const properties_temp = {
-                id: i._id,
-                name: i.name,
-                district: i.district,
-                address: i.address,
-                hotline: i.hotline,
-            };
-
-            return {
-                type: 'Feature',
-                properties: properties_temp,
-                geometry: i.location,
-            };
-        });
-
-        return res.status(200).json(cinemasFeatures, count, page, limit);
     } catch (error) {
         return res.status(400).json(error);
     }
@@ -200,4 +207,4 @@ const remove = async (req, res, next) => {
     }
 };
 
-module.exports = { search, getByID, geojson, create, update, remove };
+module.exports = { create, search, geojson, getByID, update, remove };
