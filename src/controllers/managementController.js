@@ -1,28 +1,27 @@
 const User = require('../models/User');
 const Ticket = require('../models/Ticket');
 const Transaction = require('../models/Transaction');
-const management = async () => {
+const management = async (req, res, next) => {
     try {
+        const queryOneMonth = {
+            created_at: {
+                $gte: new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth(),
+                    1,
+                ),
+                $lte: new Date(
+                    new Date().getFullYear(),
+                    new Date().getMonth() + 1,
+                    0,
+                ),
+            },
+        };
+
         const user = await User.aggregate([
             {
                 $match: {
-                    $and: [
-                        {
-                            created_at: {
-                                $gte: new Date(
-                                    new Date().getFullYear(),
-                                    new Date().getMonth(),
-                                    1,
-                                ),
-                                $lte: new Date(
-                                    new Date().getFullYear(),
-                                    new Date().getMonth() + 1,
-                                    0,
-                                ),
-                            },
-                        },
-                        { is_deleted: { $ne: true } },
-                    ],
+                    $and: [{ ...queryOneMonth }, { is_deleted: { $ne: true } }],
                 },
             },
             {
@@ -32,20 +31,7 @@ const management = async () => {
 
         const ticket = await Ticket.aggregate([
             {
-                $match: {
-                    created_at: {
-                        $gte: new Date(
-                            new Date().getFullYear(),
-                            new Date().getMonth(),
-                            1,
-                        ),
-                        $lte: new Date(
-                            new Date().getFullYear(),
-                            new Date().getMonth() + 1,
-                            0,
-                        ),
-                    },
-                },
+                $match: { ...queryOneMonth },
             },
             {
                 $count: 'total',
@@ -54,20 +40,7 @@ const management = async () => {
 
         const sumCoin = await Transaction.aggregate([
             {
-                $match: {
-                    created_at: {
-                        $gte: new Date(
-                            new Date().getFullYear(),
-                            new Date().getMonth(),
-                            1,
-                        ),
-                        $lte: new Date(
-                            new Date().getFullYear(),
-                            new Date().getMonth() + 1,
-                            0,
-                        ),
-                    },
-                },
+                $match: { ...queryOneMonth },
             },
             { $group: { _id: null, totalCoin: { $sum: '$payment' } } },
         ]).then((res) => (res[0] ? res[0].totalCoin : 0));
@@ -79,7 +52,8 @@ const management = async () => {
                 select: 'email -_id',
             })
             .lean();
-        return res.status(200).json(user, ticket, sumCoin, transactions);
+
+        return res.status(200).json({ user, ticket, sumCoin, transactions });
     } catch (error) {
         return res.status(400).json({ message: error });
     }

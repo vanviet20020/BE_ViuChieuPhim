@@ -93,5 +93,3 @@ const bookTicket = async (req, res, next) => {
 };
 
 module.exports = { bookTicket };
-
-module.exports = { bookTicket };

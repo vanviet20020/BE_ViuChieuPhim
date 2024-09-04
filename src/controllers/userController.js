@@ -11,6 +11,7 @@ const {
 const { userSchema, extendedUserSchema } = require('../helpers/checkDataInput');
 const { checkDataExists } = require('../helpers/dataExists');
 const { checkDataUnique } = require('../helpers/checkDataUnique');
+const client = require('../configs/connectRedis');
 
 const salt = bcrypt.genSaltSync(10);
 
@@ -120,7 +121,7 @@ const signIn = async (req, res, next) => {
 
         if (accessToken && refreshToken) {
             return res.status(200).json({
-                curentUser: userInfo,
+                currentUser: userInfo,
                 token: accessToken,
                 refreshToken,
                 message: 'Đăng nhập thành công',
@@ -159,7 +160,7 @@ const refreshToken = async (req, res, next) => {
 
         if (accessToken && refreshToken) {
             return res.status(200).json({
-                curentUser: userInfo,
+                currentUser: userInfo,
                 token: accessToken,
                 refreshToken: newRefreshToken,
                 message: 'Đăng nhập thành công',
