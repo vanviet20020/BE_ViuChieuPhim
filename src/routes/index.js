@@ -1,11 +1,10 @@
-const homeRoutes = require('./homeRoutes');
-const managementRoutes = require('./managementRoutes');
 const userRoutes = require('./userRoutes');
-const supplierRoutes = require('./supplierRoutes');
 const movieRoutes = require('./movieRoutes');
 const cinemaRoutes = require('./cinemaRoutes');
-const movieShowtimeRoutes = require('./movieShowtimeRoutes');
 const ticketRoutes = require('./ticketRoutes');
+const supplierRoutes = require('./supplierRoutes');
+const managementRoutes = require('./managementRoutes');
+const movieShowtimeRoutes = require('./movieShowtimeRoutes');
 
 const route = (app) => {
     app.use('/user', userRoutes);
@@ -15,7 +14,6 @@ const route = (app) => {
     app.use('/movie-showtime', movieShowtimeRoutes);
     app.use('/ticket', ticketRoutes);
     app.use('/management', managementRoutes);
-    app.use('/', homeRoutes);
 };
 
 module.exports = route;
