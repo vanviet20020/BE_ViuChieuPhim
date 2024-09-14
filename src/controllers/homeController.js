@@ -2,9 +2,9 @@ const Movie = require('../models/Movie');
 
 const home = async (req, res, next) => {
     try {
-        const data = req.params.data;
-        const page = parseInt(req.params.page) || 1;
-        const limit = parseInt(req.params.limit) || 20;
+        const data = req.query.data;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
 
         let query;
 

@@ -1,3 +1,4 @@
+const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
@@ -26,6 +27,8 @@ app.use(cookieParser());
 app.use(morgan('tiny'));
 
 app.use(setUserInRequest);
+
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 route(app);
 

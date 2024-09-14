@@ -38,13 +38,13 @@ const handleQuery = (args) => {
 };
 
 const handleSearch = async (req) => {
-    const page = parseInt(req.params.page) || 1;
-    const limit = parseInt(req.params.limit) || 20;
-    const idSupplier = req.params.supplier;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const idSupplier = req.query.supplier;
 
     await checkDataExists(idSupplier, 'Supplier');
 
-    const query = handleQuery(req.params);
+    const query = handleQuery(req.query);
 
     const cinemas = await Cinema.find(query)
         .sort({ updated_at: -1 })

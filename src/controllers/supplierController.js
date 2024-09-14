@@ -31,7 +31,7 @@ const create = async (req, res, next) => {
         const query = {
             name,
             ticket_price,
-            ticket_price_image: `img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
+            ticket_price_image: `/public/img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
         };
 
         const newSupplier = await Supplier.create(query);
@@ -91,7 +91,7 @@ const update = async (req, res, next) => {
         const query = {
             name,
             ticket_price,
-            ticket_price_image: `img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
+            ticket_price_image: `/public/img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
         };
 
         const supplierUpdate = await Supplier.findByIdAndUpdate(id, query, {

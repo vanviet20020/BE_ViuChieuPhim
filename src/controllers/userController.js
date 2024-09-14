@@ -194,9 +194,9 @@ const signOff = async (req, res, next) => {
 
 const search = async (req, res, next) => {
     try {
-        const page = parseInt(req.params.page) || 1;
-        const limit = parseInt(req.params.limit) || 20;
-        const searchData = req.params.searchData;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const searchData = req.query.searchData;
 
         const query = handleQuery(searchData);
 

@@ -32,15 +32,15 @@ const create = async (req, res, next) => {
             genre,
         } = req.body;
 
-        validateInput(name, trailer_link, runtime);
+        validateInput({ name, trailer_link, release_date, runtime });
 
         const file = req.file;
 
-        await checkDataUnique({ name }, 'Moive');
+        await checkDataUnique({ name }, 'Movie');
 
         const query = {
             name,
-            image: `img/${UPLOAD_FOLDER_MOVIE}/${file.filename}`,
+            image: `/public/img/${UPLOAD_FOLDER_MOVIE}/${file.filename}`,
             trailer_link,
             description,
             director,
@@ -74,14 +74,18 @@ const create = async (req, res, next) => {
 
 const search = async (req, res, next) => {
     try {
-        const page = parseInt(req.params.page) || 1;
-        const limit = parseInt(req.params.limit) || 20;
-        const { searchData, status = 'Screening' } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const { searchData, status } = req.query;
 
-        const query = { status, is_deleted: { $ne: true } };
-        const searchRgx = new RegExp(`.*${searchData}.*`, 'i');
+        const query = { is_deleted: { $ne: true } };
 
-        if (data) {
+        if (status) {
+            Object.assign(query, { status });
+        }
+
+        if (searchData) {
+            const searchRgx = new RegExp(`.*${searchData}.*`, 'i');
             Object.assign(query, {
                 $or: [
                     { name: { $regex: searchRgx } },
@@ -97,7 +101,7 @@ const search = async (req, res, next) => {
             .limit(limit)
             .lean();
 
-        const count = await Cinema.countDocuments(query);
+        const count = await Movie.countDocuments(query);
 
         return res.status(200).json({ movies, count, page, limit });
     } catch (error) {
@@ -132,7 +136,7 @@ const update = async (req, res, next) => {
             genre,
         } = req.body;
 
-        validateInput(name, trailer_link, runtime);
+        validateInput({ name, trailer_link, release_date, runtime });
 
         const file = req.file;
 
@@ -142,7 +146,7 @@ const update = async (req, res, next) => {
 
         const query = {
             name,
-            image: `img/${UPLOAD_FOLDER_MOVIE}${file.filename}`,
+            image: `/public/img/${UPLOAD_FOLDER_MOVIE}${file.filename}`,
             trailer_link,
             description,
             director,
@@ -205,7 +209,7 @@ const updateStatus = async (res, req, next) => {
 
 const remove = async (req, res, next) => {
     try {
-        const id = req.body.id;
+        const id = req.body?.id;
         await checkDataExists(id, 'Movie');
 
         await Movie.findByIdAndUpdate(
