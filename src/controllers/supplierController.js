@@ -25,6 +25,9 @@ const create = async (req, res, next) => {
         validateInput({ name, ticket_price });
 
         const file = req.file;
+        if (!file) {
+            throw new createError.BadRequest('Vui lòng tải hình ảnh lên');
+        }
 
         await checkDataUnique({ name }, 'Supplier');
 
@@ -55,10 +58,28 @@ const create = async (req, res, next) => {
     }
 };
 
-const getAll = async (req, res, next) => {
+const search = async (req, res, next) => {
     try {
-        const suppliers = await Supplier.find().lean();
-        return res.status(200).json(suppliers);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+        const name = req.query?.name;
+
+        const query = { is_deleted: { $ne: true } };
+
+        if (name) {
+            const nameRgx = new RegExp(`.*${name}.*`, 'i');
+            Object.assign(query, { name: { $regex: nameRgx } });
+        }
+
+        const suppliers = await Supplier.find(query)
+            .sort({ updated_at: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .lean();
+
+        const count = await Supplier.countDocuments(name);
+
+        return res.status(200).json({ suppliers, count, page, limit });
     } catch (error) {
         return res.status(400).json(error);
     }
@@ -82,8 +103,6 @@ const update = async (req, res, next) => {
 
         validateInput({ name, ticket_price });
 
-        const file = req.file;
-
         const oldSupplier = await getDataExists(id, 'Supplier');
 
         await checkDataUnique({ id, name }, 'Supplier');
@@ -91,18 +110,23 @@ const update = async (req, res, next) => {
         const query = {
             name,
             ticket_price,
-            ticket_price_image: `/public/img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
         };
+
+        const file = req.file;
+        if (file) {
+            Object.assign(query, {
+                ticket_price_image: `/public/img/${UPLOAD_FOLDER_SUPPLIER}/${file.filename}`,
+            });
+        }
 
         const supplierUpdate = await Supplier.findByIdAndUpdate(id, query, {
             new: true,
         }).lean();
 
-        if (oldSupplier) {
+        if (file && supplierUpdate) {
             const filePath = path.join(
                 __dirname,
                 '..',
-                'public',
                 oldSupplier.ticket_price_image,
             );
 
@@ -146,4 +170,4 @@ const remove = async (req, res, next) => {
     }
 };
 
-module.exports = { create, getAll, getByID, update, remove };
+module.exports = { create, search, getByID, update, remove };

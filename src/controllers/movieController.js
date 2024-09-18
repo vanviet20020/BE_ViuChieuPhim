@@ -35,6 +35,9 @@ const create = async (req, res, next) => {
         validateInput({ name, trailer_link, release_date, runtime });
 
         const file = req.file;
+        if (!file) {
+            throw new createError.BadRequest('Vui lòng tải hình ảnh lên');
+        }
 
         await checkDataUnique({ name }, 'Movie');
 
@@ -138,15 +141,12 @@ const update = async (req, res, next) => {
 
         validateInput({ name, trailer_link, release_date, runtime });
 
-        const file = req.file;
-
         const oldMovie = await getDataExists(id, 'Movie');
 
         await checkDataUnique({ id, name }, 'Movie');
 
         const query = {
             name,
-            image: `/public/img/${UPLOAD_FOLDER_MOVIE}${file.filename}`,
             trailer_link,
             description,
             director,
@@ -157,17 +157,19 @@ const update = async (req, res, next) => {
             genre,
         };
 
+        const file = req.file;
+        if (file) {
+            Object.assign(query, {
+                image: `/public/img/${UPLOAD_FOLDER_MOVIE}${file.filename}`,
+            });
+        }
+
         const movieUpdate = await Movie.findByIdAndUpdate(id, query, {
             new: true,
         }).lean();
 
-        if (movieUpdate) {
-            const filePath = path.join(
-                __dirname,
-                '..',
-                'public',
-                oldMovie.image,
-            );
+        if (file && movieUpdate) {
+            const filePath = path.join(__dirname, '..', oldMovie.image);
 
             deleteFile(filePath);
         }

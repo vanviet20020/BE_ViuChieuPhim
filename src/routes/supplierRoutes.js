@@ -13,6 +13,7 @@ router.post(
     uploadFileMiddleware(UPLOAD_FOLDER_SUPPLIER),
     supplierController.create,
 );
+router.get('/', supplierController.search);
 router.get('/:id', supplierController.getByID);
 router.patch(
     '/',
